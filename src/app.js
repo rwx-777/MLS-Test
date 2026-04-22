@@ -405,6 +405,8 @@ function createApp({ store = new InMemoryStore(), runtimeConfig = config } = {})
     }
 
     // --- targetUserId validation + membership update for welcome ---
+    // Snapshot members BEFORE addMember so fan-out logic is unambiguous.
+    const membersBeforeWelcome = [...conversation.members];
     if (eventType === 'welcome' && targetUserId) {
       if (!store.users.has(targetUserId)) {
         return res.status(404).json({ error: `Target user not found: ${targetUserId}` });
@@ -429,11 +431,9 @@ function createApp({ store = new InMemoryStore(), runtimeConfig = config } = {})
     store.addMlsEvent(conversationId, event);
 
     // --- Fan-out ---
-    const membersAtDelivery = [...conversation.members];
-    if (eventType === 'welcome' && targetUserId && !membersAtDelivery.includes(targetUserId)) {
-      membersAtDelivery.push(targetUserId);
-    }
-    inboxSvc.fanOutMlsEvent(conversationId, membersAtDelivery, event, targetUserId);
+    // For welcome: deliver only to targetUserId (using pre-welcome snapshot as
+    // the broader members list for other event types).
+    inboxSvc.fanOutMlsEvent(conversationId, membersBeforeWelcome, event, targetUserId);
 
     const response = { ...event };
     if (epochResult.currentEpoch != null) {
@@ -524,7 +524,7 @@ function createApp({ store = new InMemoryStore(), runtimeConfig = config } = {})
     sha256: z.string().min(1),
     encryptedFileKeyEnvelope: z.string().min(1),
     /** MLS epoch under which the file key envelope was sealed.  Recommended. */
-    epoch: z.string().optional(),
+    epoch: z.coerce.number().int().nonnegative().optional(),
   });
 
   app.post('/v1/files/upload', upload.single('file'), async (req, res) => {
@@ -553,7 +553,7 @@ function createApp({ store = new InMemoryStore(), runtimeConfig = config } = {})
     const filePath = path.join(runtimeConfig.uploadDir, `${fileId}.bin`);
     await fs.writeFile(filePath, req.file.buffer);
 
-    const epochValue = payload.epoch != null ? Number(payload.epoch) : null;
+    const epochValue = payload.epoch ?? null;
 
     const metadata = {
       id: fileId,

@@ -17,6 +17,11 @@
  * it holds no group secrets.  It enforces ordering invariants and relays the
  * opaque encrypted envelopes unchanged.
  */
+/** Initial epoch state for a new group. */
+function initialEpochState() {
+  return { epoch: 0, pendingProposals: [], history: [] };
+}
+
 class EpochService {
   /**
    * @param {import('../store').InMemoryStore} store
@@ -35,13 +40,7 @@ class EpochService {
    * @returns {{ epoch: number, pendingProposals: Array, history: Array }}
    */
   getState(groupId) {
-    return (
-      this.store.groupEpochs.get(groupId) || {
-        epoch: 0,
-        pendingProposals: [],
-        history: [],
-      }
-    );
+    return this.store.groupEpochs.get(groupId) || initialEpochState();
   }
 
   /**
@@ -53,7 +52,7 @@ class EpochService {
    */
   initGroup(groupId) {
     if (!this.store.groupEpochs.has(groupId)) {
-      this.store.groupEpochs.set(groupId, { epoch: 0, pendingProposals: [], history: [] });
+      this.store.groupEpochs.set(groupId, initialEpochState());
     }
     return { epoch: this.getState(groupId).epoch };
   }
