@@ -12,7 +12,13 @@ const config = {
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean),
-  uploadDir: process.env.UPLOAD_DIR || path.join('/tmp', 'mls-files')
+  uploadDir: process.env.UPLOAD_DIR || path.join('/tmp', 'mls-files'),
+  // When true every application message and MLS event must include a valid Ed25519
+  // signature over its canonical signing payload (default: false for backward compat).
+  requireMessageSignatures: process.env.REQUIRE_MESSAGE_SIGNATURES === 'true',
+  // How many past epochs application messages are accepted from before the server
+  // rejects them as stale (sliding window replay protection).
+  epochWindowSize: Number(process.env.EPOCH_WINDOW_SIZE || 2),
 };
 
 module.exports = { config };
