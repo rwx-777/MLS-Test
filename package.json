@@ -1,10 +1,12 @@
 {
   "name": "mls-test",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Cloud-ready secure MLS-ready backend for enterprise messaging",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
@@ -19,5 +21,8 @@
   },
   "devDependencies": {
     "supertest": "^7.2.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
